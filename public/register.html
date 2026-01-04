@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Register - Bruh</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h2>Register</h2>
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="register()">Register</button>
+    <p class="message" id="msg"></p>
+    <p>Already have an account? <a href="index.html">Login</a></p>
+  </div>
+
+  <script>
+    async function register() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+
+      // Validate email domain
+      const kuRegex = /^[a-zA-Z0-9._%+-]+@student\.ku\.edu\.np$/;
+      if (!kuRegex.test(email)) {
+        msg.innerText = "Email must end with @student.ku.edu.np";
+        return; // stop registration
+      }
+
+      // Proceed with server request
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+
+      const text = await res.text();
+      msg.innerText = text;
+    }
+  </script>
+</body>
+
+</html>

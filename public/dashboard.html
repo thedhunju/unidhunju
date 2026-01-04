@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>Welcome to Your Dashboard</h1>
+
+  <button onclick="location.href='upload.html'">Post Item</button>
+
+  <div id="myItems">
+    <!-- User’s items will be displayed here -->
+  </div>
+  <script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    fetch('/dashboard', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('token');
+          window.location.href = 'index.html';
+        }
+        return res.json();
+      })
+      .then(data => {
+        document.body.innerHTML += `<h2>${data.message}</h2>`;
+      });
+  </script>
+
+</body>
+
+</html>
