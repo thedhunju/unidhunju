@@ -9,7 +9,6 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import LostFound from './pages/LostFound';
 import LostFoundPost from './pages/LostFoundPost';
-import Messages from './pages/Messages';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -30,11 +29,6 @@ function App() {
             <Route path="/lost-found/new" element={
               <ProtectedRoute>
                 <LostFoundPost />
-              </ProtectedRoute>
-            } />
-            <Route path="/messages" element={
-              <ProtectedRoute>
-                <Messages />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={

@@ -113,7 +113,7 @@ export default function LostFound() {
                                                 alert('Please login to contact this user.');
                                                 navigate('/login');
                                             } else {
-                                                alert('Messaging feature coming soon!'); // Or navigate to a message thread
+                                                alert(`Contact ${post.user_name}: ${post.contact_info || 'No contact info provided'}`);
                                             }
                                         }}
                                         className="text-blue-600 text-sm font-medium hover:underline"

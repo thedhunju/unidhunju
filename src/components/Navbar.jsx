@@ -37,10 +37,6 @@ export default function Navbar() {
 
                             <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block"></div>
 
-                            <Link to="/messages" className="text-gray-400 hover:text-primary transition p-2 hover:bg-gray-50 rounded-full">
-                                <MessageCircle className="h-6 w-6" />
-                            </Link>
-
                             <Link to="/profile" className="text-gray-400 hover:text-primary transition p-2 hover:bg-gray-50 rounded-full">
                                 <User className="h-6 w-6" />
                             </Link>

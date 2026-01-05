@@ -260,45 +260,7 @@ app.get('/api/lost-found', async (req, res) => {
   }
 });
 
-// 4. Messages (Basic)
-
-// Send Message
-app.post('/api/messages', authenticateToken, async (req, res) => {
-  try {
-    const { receiver_id, item_id, content } = req.body;
-    const senderId = req.user.id;
-
-    await db.execute(
-      'INSERT INTO messages (sender_id, receiver_id, item_id, content) VALUES (?, ?, ?, ?)',
-      [senderId, receiver_id, item_id, content]
-    );
-    res.status(201).send('Message sent');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error sending message');
-  }
-});
-
-// Get Messages (Conversation style is complex, just fetching inbox for now)
-app.get('/api/messages', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    // Get messages where user is receiver
-    const [messages] = await db.execute(
-      `SELECT m.*, u.name as sender_name, i.title as item_title 
-             FROM messages m 
-             JOIN users u ON m.sender_id = u.id 
-             LEFT JOIN items i ON m.item_id = i.id
-             WHERE m.receiver_id = ? 
-             ORDER BY m.created_at DESC`,
-      [userId]
-    );
-    res.json(messages);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error fetching messages');
-  }
-});
+// 4. Messages (Basic) - REMOVED AS PER USER REQUEST
 
 
 app.listen(PORT, () => {
