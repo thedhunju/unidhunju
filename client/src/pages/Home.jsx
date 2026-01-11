@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import ItemCard from '../components/ItemCard';
 import api from '../api';
 
 const CATEGORIES = [
-    { name: 'Books & Notes', icon: '📚' },
+    { name: 'Books', icon: '📚' },
     { name: 'Stationery', icon: '✏️' },
     { name: 'Electronics', icon: '💻' },
     { name: 'Furniture', icon: '🪑' },
     { name: 'Clothing', icon: '👕' },
-    { name: 'Others', icon: '📦' },
+    { name: 'Other', icon: '📦' },
 ];
 
 export default function Home() {
@@ -56,10 +57,14 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {CATEGORIES.map((cat) => (
-                        <div key={cat.name} className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 group">
+                        <Link
+                            key={cat.name}
+                            to={`/marketplace?category=${cat.name}`}
+                            className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 group block"
+                        >
                             <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{cat.icon}</div>
                             <h3 className="font-medium text-gray-900">{cat.name}</h3>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </section>

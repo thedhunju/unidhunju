@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import api from '../api';
@@ -11,6 +12,15 @@ export default function Marketplace() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [maxPrice, setMaxPrice] = useState(5000);
+    const location = useLocation();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const category = params.get('category');
+        if (category && CATEGORIES.includes(category)) {
+            setSelectedCategory(category);
+        }
+    }, [location]);
 
     useEffect(() => {
         fetchItems();
