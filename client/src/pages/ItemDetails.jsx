@@ -122,9 +122,14 @@ export default function ItemDetails() {
                                 </div>
                             </div>
 
+
                             {item.status?.toLowerCase() === 'sold' ? (
                                 <div className="w-full py-3 bg-gray-300 text-gray-700 rounded-lg font-medium text-center">
                                     Sold Out
+                                </div>
+                            ) : user && user.id === item.user_id ? (
+                                <div className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg font-medium text-center">
+                                    Your Item
                                 </div>
                             ) : (
                                 <div className="space-y-2">

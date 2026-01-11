@@ -136,6 +136,11 @@ app.post('/api/auth/kumail', async (req, res) => {
 
 // Forgot Password - Send OTP
 app.post('/api/auth/forgot-password', async (req, res) => {
+  console.log('==========================================');
+  console.log('[FORGOT PASSWORD] Endpoint called');
+  console.log('[FORGOT PASSWORD] Email:', req.body.email);
+  console.log('==========================================');
+
   try {
     const { email } = req.body;
 
@@ -190,7 +195,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 
   } catch (err) {
+    console.error('==========================================');
     console.error('Forgot Password error:', err);
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    console.error('==========================================');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -238,9 +247,25 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-app.get('/api/dashboard', authenticateToken, (req, res) => {
-  // Return user info
-  res.json({ message: `Welcome ${req.user.name}`, user: req.user });
+app.get('/api/dashboard', authenticateToken, async (req, res) => {
+  try {
+    // Fetch full user data including picture
+    const [users] = await db.execute(
+      'SELECT id, name, email, picture FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (users.length > 0) {
+      res.json({ message: `Welcome ${req.user.name}`, user: users[0] });
+    } else {
+      // Fallback to token data if user not found
+      res.json({ message: `Welcome ${req.user.name}`, user: req.user });
+    }
+  } catch (err) {
+    console.error('Dashboard error:', err);
+    // Fallback to token data on error
+    res.json({ message: `Welcome ${req.user.name}`, user: req.user });
+  }
 });
 
 // Update Profile

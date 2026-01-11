@@ -38,15 +38,18 @@ export default function Profile() {
             // Fetch User Details
             const userRes = await api.get('/dashboard');
             if (userRes.data.user) {
+                const profilePic = userRes.data.user.picture
+                    ? `http://localhost:3000${userRes.data.user.picture}`
+                    : `https://placehold.co/150x150/3b82f6/ffffff?text=${userRes.data.user.name.charAt(0)}`;
+
                 setProfile(prev => ({
                     ...prev,
                     name: userRes.data.user.name,
                     email: userRes.data.user.email,
-                    avatar: `https://placehold.co/150x150/3b82f6/ffffff?text=${userRes.data.user.name.charAt(0)}`
+                    avatar: profilePic
                 }));
                 setEditName(userRes.data.user.name);
-                // Set initial preview to current avatar
-                setImagePreview(`http://localhost:3000${userRes.data.user.picture}`.includes('ui-avatars') ? userRes.data.user.picture : `http://localhost:3000${userRes.data.user.picture}`);
+                setImagePreview(profilePic);
             }
 
             // Fetch Items
