@@ -134,6 +134,110 @@ app.post('/api/auth/kumail', async (req, res) => {
   }
 });
 
+// Forgot Password - Send OTP
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check if user exists
+    const [users] = await db.execute('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      // Security: Don't reveal if user doesn't exist, just say sent if valid email format
+      // But for better UX in prototype, we can be honest or generic
+      return res.status(404).json({ error: 'User with this email does not exist.' });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    // Save to DB
+    await db.execute(
+      'UPDATE users SET reset_otp = ?, reset_otp_expires = ? WHERE email = ?',
+      [otp, expiry, email]
+    );
+
+    // Send Email
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail', // Or use host/port from env if needed
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'UniFind - Password Reset OTP',
+        text: `Your password reset verification code is: ${otp}\n\nThis code expires in 15 minutes.`
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.json({ message: 'Password reset code sent to your email.' });
+    } else {
+      // Fallback to Mock if no credentials
+      console.log('---------------------------------------------------');
+      console.log(`[MOCK EMAIL SERVICE] To: ${email}`);
+      console.log(`[MOCK EMAIL SERVICE] Subject: Password Reset OTP`);
+      console.log(`[MOCK EMAIL SERVICE] Your verification code is: ${otp}`);
+      console.log('---------------------------------------------------');
+      console.log('To send real emails, set EMAIL_USER and EMAIL_PASS in .env');
+
+      res.json({ message: 'Password reset code sent (Mock Mode - Check Server Console).' });
+    }
+
+  } catch (err) {
+    console.error('Forgot Password error:', err);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// Reset Password - Verify OTP and Update
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    // Verify OTP
+    const [users] = await db.execute(
+      'SELECT id, reset_otp, reset_otp_expires FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (users.length === 0) return res.status(400).json({ error: 'Invalid request' });
+
+    const user = users[0];
+
+    if (!user.reset_otp || user.reset_otp !== otp) {
+      return res.status(400).json({ error: 'Invalid confirmation code' });
+    }
+
+    if (new Date(user.reset_otp_expires) < new Date()) {
+      return res.status(400).json({ error: 'Confirmation code has expired. Please request a new one.' });
+    }
+
+    // Update Password and Clear OTP
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await db.execute(
+      'UPDATE users SET password = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE id = ?',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password has been reset successfully. You can now login.' });
+
+  } catch (err) {
+    console.error('Reset Password error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 app.get('/api/dashboard', authenticateToken, (req, res) => {
   // Return user info
   res.json({ message: `Welcome ${req.user.name}`, user: req.user });
@@ -168,7 +272,7 @@ app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, 
     }
 
     // Refresh user data
-    const [rows] = await db.execute('SELECT id, name, email FROM users WHERE id = ?', [userId]);
+    const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
     // Merge the picture (either new upload or existing from DB if valid) into the response
     const updatedUser = { ...rows[0], picture: picture || rows[0].picture };
 

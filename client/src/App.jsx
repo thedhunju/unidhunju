@@ -6,6 +6,7 @@ import ItemDetails from './pages/ItemDetails';
 import AddItem from './pages/AddItem';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
 import LostFound from './pages/LostFound';
 import LostFoundPost from './pages/LostFoundPost';
@@ -39,6 +40,7 @@ function App() {
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       </div>
     </Router>
