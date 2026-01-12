@@ -44,34 +44,17 @@ export default function AddItem() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        try {
-            const data = new FormData();
-            Object.keys(formData).forEach(key => {
-                data.append(key, formData[key]);
-            });
-
-            files.forEach(file => {
-                data.append('images', file);
-            });
-
-            await api.post('/items', data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            navigate('/marketplace');
-        } catch (err) {
-            console.error("Failed to post item", err);
-            alert('Failed to list item. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+       } catch (err) {
+        console.error("Failed to post item", err);
+        // Show the actual error message from backend
+        const errorMessage = err.response?.data?.error || 
+                           err.response?.data || 
+                           err.message || 
+                           'Failed to list item. Please try again.';
+        alert(errorMessage);
+    } finally {
+        setLoading(false);
+    }
 
     return (
         <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-12">
