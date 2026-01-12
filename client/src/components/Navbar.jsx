@@ -30,9 +30,6 @@ export default function Navbar() {
 
                     {/* Right Actions */}
                     <div className="flex items-center space-x-4">
-                        <Link to="/lost-found" className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200">
-                            Lost & Found
-                        </Link>
                         <Link to="/marketplace" className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200">
                             Marketplace
                         </Link>

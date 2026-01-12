@@ -49,10 +49,19 @@ app.get('/', (req, res) => {
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.sendStatus(401);
+  console.log('[DEBUG] authenticateToken - Token received:', token ? 'Yes' : 'No');
+
+  if (!token) {
+    console.log('[DEBUG] authenticateToken - No token provided');
+    return res.sendStatus(401);
+  }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      console.log('[DEBUG] authenticateToken - Token verification failed:', err.message);
+      return res.sendStatus(403);
+    }
+    console.log('[DEBUG] authenticateToken - Token verified for user:', user.email);
     req.user = user;
     next();
   });
@@ -454,10 +463,14 @@ app.get('/api/items/:id/comments', async (req, res) => {
 // Post a comment or reply
 app.post('/api/comments', authenticateToken, async (req, res) => {
   try {
+    console.log('[DEBUG] Post comment request received:', req.body);
+    console.log('[DEBUG] User ID from token:', req.user.id);
+
     const { item_id, comment_text, parent_comment_id } = req.body;
     const userId = req.user.id;
 
     if (!comment_text || comment_text.trim() === '') {
+      console.log('[DEBUG] Comment text empty');
       return res.status(400).json({ error: 'Comment text is required' });
     }
 
@@ -466,8 +479,10 @@ app.post('/api/comments', authenticateToken, async (req, res) => {
       [item_id, userId, comment_text, parent_comment_id || null]
     );
 
+    console.log('[DEBUG] Comment inserted, ID:', result.insertId);
+
     // Fetch the inserted comment with user data to return
-    const [newComment] = await db.execute(
+    const [newCommentRows] = await db.execute(
       `SELECT comments.*, users.name as user_name, users.picture as user_picture 
        FROM comments 
        JOIN users ON comments.user_id = users.id 
@@ -475,10 +490,16 @@ app.post('/api/comments', authenticateToken, async (req, res) => {
       [result.insertId]
     );
 
-    res.status(201).json(newComment[0]);
+    if (newCommentRows.length === 0) {
+      console.log('[DEBUG] Failed to fetch back the inserted comment');
+      return res.status(500).json({ error: 'Failed to retrieve record after insertion' });
+    }
+
+    console.log('[DEBUG] Success, returning:', newCommentRows[0]);
+    res.status(201).json(newCommentRows[0]);
   } catch (err) {
-    console.error('Error posting comment:', err);
-    res.status(500).json({ error: 'Failed to post comment' });
+    console.error('[DEBUG] Error posting comment:', err);
+    res.status(500).json({ error: 'Failed to post comment', details: err.message });
   }
 });
 

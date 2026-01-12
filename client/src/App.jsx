@@ -8,8 +8,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
-import LostFound from './pages/LostFound';
-import LostFoundPost from './pages/LostFoundPost';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -24,12 +22,6 @@ function App() {
             <Route path="/sell" element={
               <ProtectedRoute>
                 <AddItem />
-              </ProtectedRoute>
-            } />
-            <Route path="/lost-found" element={<LostFound />} />
-            <Route path="/lost-found/new" element={
-              <ProtectedRoute>
-                <LostFoundPost />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
