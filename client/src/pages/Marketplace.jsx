@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import api from '../api';
@@ -13,42 +13,48 @@ export default function Marketplace() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [maxPrice, setMaxPrice] = useState(5000);
     const location = useLocation();
+    const navigate = useNavigate();
 
-    // Unified fetch effect
+    const updateURL = (newParams) => {
+        const params = new URLSearchParams(location.search);
+        Object.keys(newParams).forEach(key => {
+            if (newParams[key] === null || newParams[key] === 'All' || newParams[key] === '') {
+                params.delete(key);
+            } else {
+                params.set(key, newParams[key]);
+            }
+        });
+        navigate(`/marketplace?${params.toString()}`, { replace: true });
+    };
+
+    // Sync URL -> State and Fetch
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        const categoryParam = params.get('category');
-        const searchParam = params.get('search');
+        const categoryParam = params.get('category') || 'All';
+        const searchParam = params.get('search') || '';
+        const priceParam = params.get('maxPrice') || '5000';
 
-        // Sync state with URL only on mount or URL change
-        if (categoryParam) {
-            const match = CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase());
-            if (match) setSelectedCategory(match);
-        } else if (!location.search) {
-            // If no search params and we just navigated here, reset to default
-            setSelectedCategory('All');
-        }
+        // Find matching category case-insensitively
+        const match = CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase()) || 'All';
 
-        if (searchParam) {
-            setSearchTerm(searchParam);
-        } else if (!location.search) {
-            setSearchTerm('');
-        }
+        setSelectedCategory(match);
+        setSearchTerm(searchParam);
+        setMaxPrice(parseInt(priceParam));
 
         const debounceTimer = setTimeout(() => {
-            fetchItems();
+            fetchFilteredItems(match, searchParam, parseInt(priceParam));
         }, 300);
 
         return () => clearTimeout(debounceTimer);
-    }, [location.search, selectedCategory, maxPrice, searchTerm]);
+    }, [location.search]);
 
-    const fetchItems = async () => {
+    const fetchFilteredItems = async (category, search, price) => {
         setLoading(true);
         try {
             const params = {};
-            if (selectedCategory !== 'All') params.category = selectedCategory;
-            if (searchTerm) params.search = searchTerm;
-            if (maxPrice) params.maxPrice = maxPrice;
+            if (category !== 'All') params.category = category;
+            if (search) params.search = search;
+            if (price) params.maxPrice = price;
 
             const { data } = await api.get('/items', { params });
             setItems(data);
@@ -78,7 +84,7 @@ export default function Marketplace() {
                                         type="radio"
                                         name="category"
                                         checked={selectedCategory === category}
-                                        onChange={() => setSelectedCategory(category)}
+                                        onChange={() => updateURL({ category })}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
                                     <span className="ml-2 text-gray-600 group-hover:text-blue-600 transition-colors duration-200">{category}</span>
@@ -101,7 +107,7 @@ export default function Marketplace() {
                             max="20000"
                             step="500"
                             value={maxPrice}
-                            onChange={(e) => setMaxPrice(parseInt(e.target.value))}
+                            onChange={(e) => updateURL({ maxPrice: e.target.value })}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                         />
                     </div>
@@ -119,7 +125,7 @@ export default function Marketplace() {
                         <input
                             type="text"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => updateURL({ search: e.target.value })}
                             className="block w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                             placeholder="Search marketplace..."
                         />
