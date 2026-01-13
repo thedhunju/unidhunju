@@ -38,17 +38,6 @@ export default function Home() {
                     <p className="text-lg text-blue-100">
                         Where Students Connect, Trade, and Find.
                     </p>
-
-                    <div className="relative max-w-lg mx-auto mt-8">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <input
-                            type="text"
-                            className="block w-full pl-10 pr-4 py-3 border-none rounded-full leading-5 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Search for books, electronics, and more..."
-                        />
-                    </div>
                 </div>
             </section>
 

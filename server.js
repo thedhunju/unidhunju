@@ -382,7 +382,6 @@ app.get('/api/items', async (req, res) => {
     const [items] = await db.execute(query, params);
     res.json(items);
   } catch (err) {
-    console.error(err);
     res.status(500).send('Error fetching items');
   }
 });

@@ -14,25 +14,33 @@ export default function Marketplace() {
     const [maxPrice, setMaxPrice] = useState(5000);
     const location = useLocation();
 
+    // Unified fetch effect
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        const category = params.get('category');
-        if (category && CATEGORIES.includes(category)) {
-            setSelectedCategory(category);
+        const categoryParam = params.get('category');
+        const searchParam = params.get('search');
+
+        // Sync state with URL only on mount or URL change
+        if (categoryParam) {
+            const match = CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase());
+            if (match) setSelectedCategory(match);
+        } else if (!location.search) {
+            // If no search params and we just navigated here, reset to default
+            setSelectedCategory('All');
         }
-    }, [location]);
 
-    useEffect(() => {
-        fetchItems();
-    }, [selectedCategory, maxPrice]); // Re-fetch when filters change (debounce search ideally)
+        if (searchParam) {
+            setSearchTerm(searchParam);
+        } else if (!location.search) {
+            setSearchTerm('');
+        }
 
-    // Debounced search effect
-    useEffect(() => {
-        const timer = setTimeout(() => {
+        const debounceTimer = setTimeout(() => {
             fetchItems();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [location.search, selectedCategory, maxPrice, searchTerm]);
 
     const fetchItems = async () => {
         setLoading(true);
