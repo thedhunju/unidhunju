@@ -116,7 +116,7 @@ export default function ItemDetails() {
                 await api.post(`/bookings/${item.booking_id}/confirm`);
             } else {
                 // Direct mark as sold
-                await api.post(`/items/${item.id}/sold`);
+                await api.post(`/items/${id}/sold`);
             }
             alert('Item marked as sold successfully!');
             setItem(prev => ({ ...prev, status: 'sold' }));
