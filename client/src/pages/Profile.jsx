@@ -20,7 +20,6 @@ export default function Profile() {
     });
 
     const [myItems, setMyItems] = useState([]);
-    const [myPurchases, setMyPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Edit Modal State
@@ -38,10 +37,9 @@ export default function Profile() {
     const fetchProfileData = async () => {
         try {
             // Fetch multiple datasets concurrently for better performance
-            const [userRes, itemsRes, purchasesRes] = await Promise.all([
+            const [userRes, itemsRes] = await Promise.all([
                 api.get('/dashboard'),
-                api.get('/my-items'),
-                api.get('/my-purchases')
+                api.get('/my-items')
             ]);
 
             if (userRes.data.user) {
@@ -60,7 +58,6 @@ export default function Profile() {
             }
 
             setMyItems(itemsRes.data);
-            setMyPurchases(purchasesRes.data);
         } catch (error) {
             console.error('Error fetching profile data:', error);
         } finally {
@@ -120,9 +117,7 @@ export default function Profile() {
         ? myItems.filter(i => i.status?.toLowerCase() !== 'sold')
         : activeTab === 'sold'
             ? myItems.filter(i => i.status?.toLowerCase() === 'sold')
-            : activeTab === 'purchases'
-                ? myPurchases
-                : [];
+            : [];
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -177,10 +172,6 @@ export default function Profile() {
                             <div className="text-center px-6 py-2 bg-gray-50 rounded-lg">
                                 <span className="block text-2xl font-bold text-gray-900">{soldCount}</span>
                                 <span className="text-xs text-gray-500 uppercase tracking-wider">Sold</span>
-                            </div>
-                            <div className="text-center px-6 py-2 bg-gray-50 rounded-lg">
-                                <span className="block text-2xl font-bold text-gray-900">{myPurchases.length}</span>
-                                <span className="text-xs text-gray-500 uppercase tracking-wider">Bought</span>
                             </div>
                         </div>
                     </div>
@@ -272,15 +263,6 @@ export default function Profile() {
                                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
                         >
                             <CheckCircle className="h-4 w-4 mr-2" /> Sold items
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('purchases')}
-                            className={`${activeTab === 'purchases'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-                        >
-                            <Package className="h-4 w-4 mr-2" /> My Purchases
                         </button>
                     </nav>
                 </div>
