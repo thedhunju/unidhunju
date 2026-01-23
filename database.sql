@@ -7,6 +7,9 @@ CREATE TABLE users (
   picture varchar(255) DEFAULT NULL,
   reset_otp varchar(6) DEFAULT NULL,
   reset_otp_expires datetime DEFAULT NULL,
+  is_verified tinyint(1) DEFAULT '0',
+  verification_otp varchar(6) DEFAULT NULL,
+  verification_otp_expires datetime DEFAULT NULL,
   created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY email (email)
