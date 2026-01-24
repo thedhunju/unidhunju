@@ -1,0 +1,13 @@
+CREATE TABLE `bookings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `item_id` int NOT NULL,
+  `user_id` char(36) NOT NULL,
+  `booked_quantity` int NOT NULL DEFAULT '1',
+  `status` enum('pending','confirmed','cancelled') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `item_id` (`item_id`),
+  KEY `bookings_ibfk_2` (`user_id`),
+  CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`item_id`) REFERENCES `items` (`id`),
+  CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
