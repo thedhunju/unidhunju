@@ -7,12 +7,14 @@ const upload = require('../middleware/upload');
 // Update Profile
 router.put('/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, removePicture } = req.body;
         const userId = req.user.id;
-        let picture = null;
+        let picture = undefined; // Use undefined to distinguish between null (remove) and not provided
 
         if (req.file) {
             picture = `/uploads/${req.file.filename}`;
+        } else if (removePicture === 'true' || removePicture === true) {
+            picture = null;
         }
 
         // Basic validation
@@ -20,11 +22,11 @@ router.put('/profile', authenticateToken, upload.single('avatar'), async (req, r
             return res.status(400).json({ error: 'Name is required' });
         }
 
-        // Update name and picture if provided
+        // Update name and picture if provided or explicitly removed
         let query = 'UPDATE users SET name = ?';
         let params = [name];
 
-        if (picture) {
+        if (picture !== undefined) {
             query += ', picture = ?';
             params.push(picture);
         }

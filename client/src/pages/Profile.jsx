@@ -19,7 +19,7 @@ export default function Profile() {
         email: user?.email || '',
         faculty: 'Student',
         avatar: user?.picture ? user.picture : `https://placehold.co/150x150/3b82f6/ffffff?text=${user?.name ? user.name.charAt(0) : 'U'}`,
-        location: 'KU, Dhulikhel'
+        
     });
 
     const [myItems, setMyItems] = useState([]);
@@ -30,6 +30,7 @@ export default function Profile() {
     const [editName, setEditName] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [isRemovingImage, setIsRemovingImage] = useState(false);
 
 
     useEffect(() => {
@@ -74,6 +75,8 @@ export default function Profile() {
             formData.append('name', editName);
             if (imageFile) {
                 formData.append('avatar', imageFile);
+            } else if (isRemovingImage) {
+                formData.append('removePicture', true);
             }
 
             const res = await api.put('/profile', formData, {
@@ -94,6 +97,7 @@ export default function Profile() {
                 refreshUser(res.data.user);
             }
 
+            setIsRemovingImage(false);
             setIsEditing(false);
             showToast('Profile updated successfully!', 'success');
         } catch (error) {
@@ -107,7 +111,14 @@ export default function Profile() {
         if (file) {
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
+            setIsRemovingImage(false);
         }
+    };
+
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(`https://placehold.co/150x150/3b82f6/ffffff?text=${profile.name.charAt(0)}`);
+        setIsRemovingImage(true);
     };
 
     // Calculate Counts
@@ -224,10 +235,27 @@ export default function Profile() {
                                 </div>
                             </div>
 
+                            {(imagePreview || profile.avatar) && !imagePreview?.includes('placehold.co') && (
+                                <div className="flex justify-center mb-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        className="text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 py-1 px-3 rounded-full transition"
+                                    >
+                                        Remove Picture
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="pt-4 flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsEditing(false)}
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setIsRemovingImage(false);
+                                        setImageFile(null);
+                                        setImagePreview(profile.avatar);
+                                    }}
                                     className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
                                 >
                                     Cancel
