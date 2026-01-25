@@ -229,19 +229,19 @@ app.get('/api/my-items', authenticateToken, async (req, res) => {
 // Create Item
 app.post('/api/items', authenticateToken, upload.array('images', 5), async (req, res) => {
   try {
-    const { title, description, price, category } = req.body;
+    const { title, description, price, category, condition } = req.body;
     const userId = req.user.id;
-    const imageUrl = req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
+    const imageUrl = (req.files && req.files.length > 0) ? `/uploads/${req.files[0].filename}` : '';
 
     const [result] = await db.execute(
-      'INSERT INTO items (uploaded_by, title, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, title, description, price, category.toLowerCase(), imageUrl]
+      'INSERT INTO items (uploaded_by, title, description, price, category, item_condition, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, title, description, price, category.toLowerCase(), condition.toLowerCase(), imageUrl]
     );
 
     res.status(201).json({ id: result.insertId, message: 'Item listed successfully' });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Error creating item listing');
+    console.error('[DEBUG] Create Item Error:', err);
+    res.status(500).send('Error creating item listing: ' + err.message);
   }
 });
 

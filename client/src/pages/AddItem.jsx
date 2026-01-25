@@ -11,6 +11,7 @@ export default function AddItem() {
     const [formData, setFormData] = useState({
         title: '',
         category: '',
+        condition: '',
         price: '',
         description: ''
     });
@@ -47,6 +48,7 @@ export default function AddItem() {
             const data = new FormData();
             data.append('title', formData.title);
             data.append('category', formData.category);
+            data.append('condition', formData.condition);
             data.append('price', formData.price);
             data.append('description', formData.description);
 
@@ -115,6 +117,22 @@ export default function AddItem() {
                             onChange={handleChange}
                         />
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+                    <select
+                        name="condition"
+                        required
+                        className="block w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        value={formData.condition}
+                        onChange={handleChange}
+                    >
+                        <option value="">Select Condition</option>
+                        <option value="New">New</option>
+                        <option value="Decent">Decent</option>
+                        <option value="Too Old">Too Old</option>
+                    </select>
                 </div>
 
                 <div>
