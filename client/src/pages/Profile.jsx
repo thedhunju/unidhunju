@@ -27,6 +27,7 @@ export default function Profile() {
     const [editName, setEditName] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [shouldRemovePicture, setShouldRemovePicture] = useState(false);
     const [editMode, setEditMode] = useState('full'); // 'full' or 'name-only'
     const { logout, refreshUser, user } = useAuth();
 
@@ -73,7 +74,9 @@ export default function Profile() {
         try {
             const formData = new FormData();
             formData.append('name', editName);
-            if (imageFile) {
+            if (shouldRemovePicture) {
+                formData.append('removePicture', 'true');
+            } else if (imageFile) {
                 formData.append('avatar', imageFile);
             }
 
@@ -83,12 +86,21 @@ export default function Profile() {
                 },
             });
 
-            // Update local state
+            // Update local state and construct correct avatar URL
+            const updatedUser = res.data.user;
+            const updatedPic = updatedUser.picture
+                ? `http://localhost:3000${updatedUser.picture}`
+                : `https://placehold.co/150x150/3b82f6/ffffff?text=${updatedUser.name.charAt(0).toUpperCase()}`;
+
             setProfile(prev => ({
                 ...prev,
-                name: res.data.user.name,
-                avatar: `http://localhost:3000${res.data.user.picture}`
+                name: updatedUser.name,
+                avatar: updatedPic
             }));
+
+            setShouldRemovePicture(false);
+            setImageFile(null);
+            setIsEditing(false);
 
             // Update global context
             if (refreshUser) {
@@ -228,7 +240,7 @@ export default function Profile() {
                                         <img
                                             src={imagePreview || profile.avatar}
                                             alt="Profile Preview"
-                                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 group-hover:border-blue-100 transition"
+                                            className={`w-24 h-24 rounded-full object-cover border-4 transition ${shouldRemovePicture ? 'opacity-30 border-red-200' : 'border-gray-100 group-hover:border-blue-100'}`}
                                         />
                                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                                             <div className="text-white text-xs font-medium">Change</div>
@@ -238,9 +250,27 @@ export default function Profile() {
                                             id="avatar-upload"
                                             className="hidden"
                                             accept="image/*"
-                                            onChange={handleImageChange}
+                                            onChange={(e) => {
+                                                handleImageChange(e);
+                                                setShouldRemovePicture(false);
+                                            }}
                                         />
                                     </div>
+                                    {profile.avatar && !profile.avatar.includes('placehold.co') && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShouldRemovePicture(!shouldRemovePicture);
+                                                if (!shouldRemovePicture) {
+                                                    setImageFile(null);
+                                                    setImagePreview(null);
+                                                }
+                                            }}
+                                            className={`mt-2 text-xs font-medium px-3 py-1 rounded-full transition ${shouldRemovePicture ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                                        >
+                                            {shouldRemovePicture ? 'Keep Current Picture' : 'Remove Picture'}
+                                        </button>
+                                    )}
                                 </div>
                             )}
 

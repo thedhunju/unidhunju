@@ -174,26 +174,23 @@ app.get('/api/dashboard', authenticateToken, async (req, res) => {
 // Update Profile
 app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, removePicture } = req.body;
     const userId = req.user.id;
     let picture = null;
+    let isRemoving = removePicture === 'true';
 
     // If new avatar uploaded, update picture URL
     if (req.file) {
       picture = `/uploads/${req.file.filename}`;
+      isRemoving = false; // Uploading a new one cancels removal
     }
 
-    try {
-      await db.execute('UPDATE users SET name = ?' + (picture ? ', picture = ?' : '') + ' WHERE id = ?',
-        picture ? [name, picture, userId] : [name, userId]
-      );
-    } catch (sqlErr) {
-      // If 'picture' column doesn't exist (ER_BAD_FIELD_ERROR), fallback to name only
-      if (sqlErr.code === 'ER_BAD_FIELD_ERROR' || sqlErr.code === 'ER_UNKNOWN_COLUMN') {
-        await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
-      } else {
-        throw sqlErr;
-      }
+    if (isRemoving) {
+      await db.execute('UPDATE users SET picture = NULL WHERE id = ?', [userId]);
+    } else if (picture) {
+      await db.execute('UPDATE users SET name = ? , picture = ? WHERE id = ?', [name, picture, userId]);
+    } else {
+      await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
     }
 
     // Refresh user data
@@ -203,7 +200,7 @@ app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, 
 
     res.json({ message: 'Profile updated', user: updatedUser });
   } catch (err) {
-    console.error(err);
+    console.error('[ERROR] PUT /api/profile:', err);
     res.status(500).send('Error updating profile');
   }
 });
