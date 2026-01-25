@@ -154,10 +154,17 @@ export default function Profile() {
                     </div>
 
                     <div className="flex-1 text-center md:text-left space-y-4">
-                        <div>
+                        <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
-                            <p className="text-blue-600 font-medium">{profile.faculty}</p>
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                title="Edit Name"
+                            >
+                                <Edit className="h-5 w-5" />
+                            </button>
                         </div>
+                        <p className="text-blue-600 font-medium">{profile.faculty}</p>
 
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-center md:justify-start text-gray-500">
                             <div className="flex items-center">
