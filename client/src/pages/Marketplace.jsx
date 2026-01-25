@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import api from '../api';
 
@@ -15,6 +15,8 @@ export default function Marketplace() {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
+
     const updateURL = (newParams) => {
         const params = new URLSearchParams(location.search);
         Object.keys(newParams).forEach(key => {
@@ -25,6 +27,7 @@ export default function Marketplace() {
             }
         });
         navigate(`/marketplace?${params.toString()}`, { replace: true });
+        setShowMobileFilters(false); // Close mobile filters on selection
     };
 
     // Sync URL -> State and Fetch
@@ -66,12 +69,35 @@ export default function Marketplace() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 relative">
+            {/* Mobile Filter Toggle */}
+            <div className="lg:hidden sticky top-[64px] z-30 bg-gray-50/80 backdrop-blur-md py-4 px-1 -mx-4 mb-2 border-b border-gray-200">
+                <button
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                    className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-lg py-2.5 text-sm font-semibold text-gray-700 shadow-sm active:scale-95 transition-all"
+                >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+                    {selectedCategory !== 'All' && (
+                        <span className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                            {selectedCategory}
+                        </span>
+                    )}
+                </button>
+            </div>
+
             {/* Sidebar Filters */}
-            <aside className="w-full lg:w-64 flex-shrink-0 space-y-8 bg-white p-6 rounded-xl border border-gray-100 h-fit sticky top-24">
+            <aside className={`
+                ${showMobileFilters ? 'block' : 'hidden md:hidden lg:block'} 
+                w-full lg:w-64 flex-shrink-0 space-y-8 bg-white p-6 rounded-xl border border-gray-100 h-fit 
+                lg:sticky lg:top-24 z-20 transition-all duration-300
+            `}>
                 <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                        <SlidersHorizontal className="h-5 w-5 mr-2" /> Filters
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center justify-between">
+                        <span className="flex items-center"><SlidersHorizontal className="h-5 w-5 mr-2" /> Filters</span>
+                        <button onClick={() => setShowMobileFilters(false)} className="lg:hidden text-gray-400 p-1 hover:bg-gray-100 rounded">
+                            <X className="h-5 w-5" />
+                        </button>
                     </h3>
 
                     {/* Categories */}
@@ -115,10 +141,10 @@ export default function Marketplace() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1">
+            <main className="flex-1 min-w-0">
                 {/* Search Header */}
-                <div className="bg-white p-4 rounded-xl border border-gray-100 mb-6 flex items-center gap-4">
-                    <div className="relative flex-1">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 mb-6 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative flex-1 w-full">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-5 w-5 text-gray-400" />
                         </div>
@@ -130,16 +156,18 @@ export default function Marketplace() {
                             placeholder="Search marketplace..."
                         />
                     </div>
-                    <div className="text-sm text-gray-500">
-                        Showing {items.length} results
+                    <div className="text-sm text-gray-500 whitespace-nowrap">
+                        Showing {items.length} records
                     </div>
                 </div>
 
                 {/* Listings Grid */}
                 {loading ? (
-                    <div className="text-center py-12">Loading...</div>
+                    <div className="text-center py-12">
+                        <div className="animate-pulse text-gray-400">Loading items...</div>
+                    </div>
                 ) : items.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                         {items.map(item => (
                             <ItemCard key={item.id} item={{
                                 ...item,
