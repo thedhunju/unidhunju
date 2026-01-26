@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, AlertCircle, Mail, User as UserIcon, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useToast } from '../context/ToastContext';
 
 export default function Register() {
     const [email, setEmail] = useState('');
@@ -10,8 +10,8 @@ export default function Register() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [otp, setOtp] = useState('');
     const [step, setStep] = useState('form'); // 'form' or 'verify'
+    const { showToast } = useToast();
     const { login, verifyRegister } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -45,8 +45,10 @@ export default function Register() {
             const res = await login(email, name, 'register', password);
 
             if (res.success && res.requiresVerification) {
+                showToast('OTP sent to your email!', 'info');
                 setStep('verify');
             } else if (res.success) {
+                showToast('Account created successfully!', 'success');
                 navigate('/profile');
             } else {
                 setError(res.message);
@@ -61,6 +63,7 @@ export default function Register() {
 
             const res = await verifyRegister(email, otp);
             if (res.success) {
+                showToast('Verification successful! Welcome to UniFind.', 'success');
                 navigate('/profile');
             } else {
                 setError(res.message);

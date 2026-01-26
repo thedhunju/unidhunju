@@ -62,6 +62,7 @@ export default function AddItem() {
                 },
             });
 
+            showToast('Item posted successfully!', 'success');
             navigate('/marketplace');
         } catch (err) {
             console.error("Failed to post item", err);

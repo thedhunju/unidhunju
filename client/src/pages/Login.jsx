@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, AlertCircle, Mail, User as UserIcon, Lock } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -20,6 +22,7 @@ export default function Login() {
         const res = await login(email, null, 'login', password);
 
         if (res.success) {
+            showToast('Sign in successful!', 'success');
             // Redirect to the page they were trying to access, or profile
             const from = location.state?.from || '/profile';
             navigate(from);
