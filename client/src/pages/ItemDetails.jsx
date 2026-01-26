@@ -162,10 +162,34 @@ export default function ItemDetails() {
         try {
             await api.post(`/bookings/${item.booking_id}/cancel`);
             showToast('Booking cancelled successfully', 'success');
-            setItem(prev => ({ ...prev, status: 'available', booking_id: null, buyer_id: null }));
+            setItem(prev => ({ ...prev, status: 'available', booking_id: null, buyer_id: null, booking_status: null }));
         } catch (err) {
             console.error('Cancel error:', err);
             showToast(err.response?.data?.error || 'Failed to cancel booking', 'error');
+        }
+    };
+
+    const handleAccept = async () => {
+        if (!window.confirm('Accept this reservation request?')) return;
+        try {
+            await api.post(`/bookings/${item.booking_id}/accept`);
+            showToast('Reservation accepted!', 'success');
+            setItem(prev => ({ ...prev, status: 'reserved', booking_status: 'reserved' }));
+        } catch (err) {
+            console.error('Accept error:', err);
+            showToast(err.response?.data?.error || 'Failed to accept reservation', 'error');
+        }
+    };
+
+    const handleReject = async () => {
+        if (!window.confirm('Reject this reservation request? The item will become available for others.')) return;
+        try {
+            await api.post(`/bookings/${item.booking_id}/reject`);
+            showToast('Reservation rejected', 'info');
+            setItem(prev => ({ ...prev, status: 'available', booking_id: null, buyer_id: null, booking_status: null }));
+        } catch (err) {
+            console.error('Reject error:', err);
+            showToast(err.response?.data?.error || 'Failed to reject reservation', 'error');
         }
     };
 
@@ -292,19 +316,60 @@ export default function ItemDetails() {
                                 <div className="w-full py-3 bg-gray-300 text-gray-700 rounded-lg font-medium text-center">
                                     Sold Out
                                 </div>
+                            ) : item.status?.toLowerCase() === 'pending' ? (
+                                <div className="space-y-4">
+                                    <div className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg font-medium text-center">
+                                        Reservation Pending
+                                    </div>
+                                    {user && user.id === item.uploaded_by && (
+                                        <>
+                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                                <p className="text-sm text-blue-800 font-medium mb-3">Reservation request from {item.buyer_name}</p>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleAccept}
+                                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition"
+                                                    >
+                                                        Accept
+                                                    </button>
+                                                    <button
+                                                        onClick={handleReject}
+                                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                    {user && user.id === item.buyer_id && (
+                                        <div className="text-center">
+                                            <p className="text-sm text-gray-500 mb-2">Waiting for seller's approval</p>
+                                            <button
+                                                onClick={handleCancel}
+                                                className="w-full py-2 text-sm text-red-600 hover:text-red-700 font-medium transition"
+                                            >
+                                                Cancel Request
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             ) : item.status?.toLowerCase() === 'reserved' ? (
                                 <div className="space-y-4">
                                     <div className="w-full py-3 bg-yellow-100 text-yellow-700 rounded-lg font-medium text-center">
-                                        Reserved
+                                        Reserved {user && user.id === item.buyer_id ? 'by You' : ''}
                                     </div>
                                     {user && user.id === item.uploaded_by && (
-                                        <button
-                                            onClick={handleConfirmSale}
-                                            disabled={confirming}
-                                            className="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg font-medium transition active:scale-95 disabled:opacity-50"
-                                        >
-                                            {confirming ? 'Confirming...' : 'Mark as Sold'}
-                                        </button>
+                                        <>
+                                            <p className="text-sm text-gray-600 text-center">Reserved for {item.buyer_name}</p>
+                                            <button
+                                                onClick={handleConfirmSale}
+                                                disabled={confirming}
+                                                className="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg font-medium transition active:scale-95 disabled:opacity-50"
+                                            >
+                                                {confirming ? 'Confirming...' : 'Mark as Sold'}
+                                            </button>
+                                        </>
                                     )}
                                     {(user && (user.id === item.uploaded_by || user.id === item.buyer_id)) && (
                                         <button

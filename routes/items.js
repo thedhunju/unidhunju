@@ -62,7 +62,7 @@ router.put('/:id', authenticateToken, upload.array('images', 1), async (req, res
 router.get('/', async (req, res) => {
     try {
         const { category, search, maxPrice } = req.query;
-        let query = 'SELECT items.*, users.name as seller_name, users.picture as seller_picture FROM items JOIN users ON items.uploaded_by = users.id WHERE items.status = "available"';
+        let query = 'SELECT items.*, users.name as seller_name, users.picture as seller_picture FROM items JOIN users ON items.uploaded_by = users.id WHERE items.status IN ("available", "pending", "reserved")';
         const params = [];
 
         if (category && category.toLowerCase() !== 'all') {
@@ -92,10 +92,11 @@ router.get('/:id', async (req, res) => {
     try {
         const [rows] = await db.execute(
             `SELECT items.*, users.name as seller_name, users.email as seller_email, users.picture as seller_picture,
-              bookings.id as booking_id, bookings.user_id as buyer_id
+              bookings.id as booking_id, bookings.user_id as buyer_id, buyer.name as buyer_name, buyer.picture as buyer_picture, bookings.status as booking_status
          FROM items 
          JOIN users ON items.uploaded_by = users.id 
-         LEFT JOIN bookings ON items.id = bookings.item_id AND (bookings.status = 'reserved' OR bookings.status = 'confirmed')
+         LEFT JOIN bookings ON items.id = bookings.item_id AND (bookings.status = 'pending' OR bookings.status = 'reserved' OR bookings.status = 'confirmed')
+         LEFT JOIN users as buyer ON bookings.user_id = buyer.id
          WHERE items.id = ?
          ORDER BY bookings.created_at DESC LIMIT 1`,
             [req.params.id]
@@ -128,10 +129,10 @@ router.post('/:id/reserve', authenticateToken, async (req, res) => {
 
         await db.execute(
             'INSERT INTO bookings (item_id, user_id, booked_quantity, status) VALUES (?, ?, ?, ?)',
-            [itemId, userId, 1, 'reserved']
+            [itemId, userId, 1, 'pending']
         );
 
-        await db.execute('UPDATE items SET status = ? WHERE id = ?', ['reserved', itemId]);
+        await db.execute('UPDATE items SET status = ? WHERE id = ?', ['pending', itemId]);
 
         res.json({ message: 'Item reserved successfully!', itemId: itemId });
     } catch (err) {

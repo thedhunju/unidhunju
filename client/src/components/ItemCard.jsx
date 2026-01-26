@@ -39,6 +39,11 @@ export default function ItemCard({ item }) {
                             RESERVED
                         </div>
                     )}
+                    {item.status?.toLowerCase() === 'pending' && (
+                        <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">
+                            PENDING
+                        </div>
+                    )}
                     <div className="absolute bottom-2 left-2 flex items-center bg-white/90 backdrop-blur-sm rounded-full pr-3 py-0.5 shadow-sm">
                         <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold overflow-hidden">
                             {item.seller_picture ? (
