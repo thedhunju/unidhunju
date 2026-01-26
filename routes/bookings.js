@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { createNotification } = require('../utils/notificationHelper');
 
 // Cancel Reservation/Booking
 router.post('/:id/cancel', authenticateToken, async (req, res) => {
@@ -40,7 +41,7 @@ router.post('/:id/confirm', authenticateToken, async (req, res) => {
 
         // Verify that the user is the seller of the item in this booking
         const [bookings] = await db.execute(
-            `SELECT b.*, i.uploaded_by as seller_id 
+            `SELECT b.*, i.uploaded_by as seller_id, i.title 
              FROM bookings b 
              JOIN items i ON b.item_id = i.id 
              WHERE b.id = ?`,
@@ -64,6 +65,14 @@ router.post('/:id/confirm', authenticateToken, async (req, res) => {
 
         // 2. Update item status to sold
         await db.execute('UPDATE items SET status = "sold" WHERE id = ?', [booking.item_id]);
+
+        // Notify the buyer
+        await createNotification(
+            booking.user_id,
+            'item_sold',
+            `Item "${booking.title || 'the item'}" has been marked as sold. Your booking is confirmed.`,
+            booking.item_id
+        );
 
         res.json({ message: 'Item marked as sold and booking confirmed.' });
     } catch (err) {
@@ -97,6 +106,14 @@ router.post('/:id/accept', authenticateToken, async (req, res) => {
         await db.execute('UPDATE bookings SET status = "reserved" WHERE id = ?', [bookingId]);
         await db.execute('UPDATE items SET status = "reserved" WHERE id = ?', [booking.item_id]);
 
+        // Notify the buyer
+        await createNotification(
+            booking.user_id,
+            'reservation_accepted',
+            `Your reservation request for "${booking.title || 'the item'}" has been accepted!`,
+            booking.item_id
+        );
+
         res.json({ message: 'Reservation accepted.' });
     } catch (err) {
         console.error('Accept Reservation error:', err);
@@ -128,6 +145,14 @@ router.post('/:id/reject', authenticateToken, async (req, res) => {
 
         await db.execute('UPDATE bookings SET status = "cancelled" WHERE id = ?', [bookingId]);
         await db.execute('UPDATE items SET status = "available" WHERE id = ?', [booking.item_id]);
+
+        // Notify the buyer
+        await createNotification(
+            booking.user_id,
+            'reservation_rejected',
+            `Your reservation request for "${booking.title || 'the item'}" was rejected. The item is available for others.`,
+            booking.item_id
+        );
 
         res.json({ message: 'Reservation rejected.' });
     } catch (err) {

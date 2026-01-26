@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { createNotification } = require('../utils/notificationHelper');
 
 // Create Item
 router.post('/', authenticateToken, upload.array('images', 5), async (req, res) => {
@@ -133,6 +134,14 @@ router.post('/:id/reserve', authenticateToken, async (req, res) => {
         );
 
         await db.execute('UPDATE items SET status = ? WHERE id = ?', ['pending', itemId]);
+
+        // Notify the seller
+        await createNotification(
+            item.uploaded_by,
+            'reservation_request',
+            `You have a new reservation request for "${item.title}".`,
+            itemId
+        );
 
         res.json({ message: 'Item reserved successfully!', itemId: itemId });
     } catch (err) {
