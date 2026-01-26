@@ -11,7 +11,7 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
         const userId = req.user.id;
 
         const [bookings] = await db.execute(
-            'SELECT b.*, i.uploaded_by as seller_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+            'SELECT b.*, i.uploaded_by as seller_id, i.title FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
             [bookingId]
         );
 
@@ -88,7 +88,7 @@ router.post('/:id/accept', authenticateToken, async (req, res) => {
         const userId = req.user.id;
 
         const [bookings] = await db.execute(
-            'SELECT b.*, i.uploaded_by as seller_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+            'SELECT b.*, i.uploaded_by as seller_id, i.title FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
             [bookingId]
         );
 
@@ -128,7 +128,7 @@ router.post('/:id/reject', authenticateToken, async (req, res) => {
         const userId = req.user.id;
 
         const [bookings] = await db.execute(
-            'SELECT b.*, i.uploaded_by as seller_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+            'SELECT b.*, i.uploaded_by as seller_id, i.title FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
             [bookingId]
         );
 

@@ -185,11 +185,14 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Click outside to close dropdown */}
-            {showDropdown && (
+            {/* Click outside to close dropdowns */}
+            {(showDropdown || showNotifications) && (
                 <div
                     className="fixed inset-0 z-40"
-                    onClick={() => setShowDropdown(false)}
+                    onClick={() => {
+                        setShowDropdown(false);
+                        setShowNotifications(false);
+                    }}
                 />
             )}
         </nav>
