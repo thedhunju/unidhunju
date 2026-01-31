@@ -27,6 +27,25 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
         await db.execute('UPDATE items SET status = "available" WHERE id = ?', [booking.item_id]);
 
         res.json({ message: 'Booking cancelled and item is now available.' });
+
+        // Notify the other party
+        if (userId === booking.seller_id) {
+            // Seller cancelled, notify buyer
+            await createNotification(
+                booking.user_id,
+                'reservation_cancelled',
+                `Your reservation for "${booking.title || 'the item'}" has been cancelled by the seller.`,
+                booking.item_id
+            );
+        } else if (userId === booking.user_id) {
+            // Buyer cancelled, notify seller
+            await createNotification(
+                booking.seller_id,
+                'reservation_cancelled',
+                `The reservation for "${booking.title || 'the item'}" has been cancelled by the buyer.`,
+                booking.item_id
+            );
+        }
     } catch (err) {
         console.error('Cancel Booking error:', err);
         res.status(500).json({ error: 'Failed to cancel booking.' });

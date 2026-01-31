@@ -27,7 +27,8 @@ export default function NotificationDropdown({ notifications, onMarkAsRead, onMa
         switch (type) {
             case 'reservation_request': return <ShoppingBag className="h-4 w-4 text-blue-600" />;
             case 'reservation_accepted': return <CheckCircle className="h-4 w-4 text-green-600" />;
-            case 'reservation_rejected': return <XCircle className="h-4 w-4 text-red-600" />;
+            case 'reservation_rejected':
+            case 'reservation_cancelled': return <XCircle className="h-4 w-4 text-red-600" />;
             case 'item_sold': return <ShoppingBag className="h-4 w-4 text-green-600" />;
             case 'comment':
             case 'reply': return <MessageSquare className="h-4 w-4 text-purple-600" />;
