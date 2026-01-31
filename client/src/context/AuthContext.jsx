@@ -14,12 +14,25 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem('token');
             if (token) {
                 try {
-                    // Decode token to get user info
+                    // Optimistically set user from token first for speed
                     const payload = JSON.parse(atob(token.split('.')[1]));
                     setUser(payload);
+
+                    // Then fetch fresh data from server to ensure sync
+                    // Using /dashboard based on Profile.jsx usage
+                    const { data } = await api.get('/dashboard');
+                    if (data && data.user) {
+                        setUser(prev => ({ ...prev, ...data.user }));
+                    }
                 } catch (err) {
                     console.error("Auth check failed", err);
-                    localStorage.removeItem('token');
+                    // If fetching fails but token exists, we might want to keep the token 
+                    // or let the interceptor handle 401s. 
+                    // For now, if decoding fails, we clear.
+                    if (err instanceof SyntaxError) {
+                        localStorage.removeItem('token');
+                        setUser(null);
+                    }
                 }
             }
             setLoading(false);
