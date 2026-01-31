@@ -26,12 +26,13 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
         await db.execute('UPDATE bookings SET status = "cancelled" WHERE id = ?', [bookingId]);
         await db.execute('UPDATE items SET status = "available" WHERE id = ?', [booking.item_id]);
 
-        res.json({ message: 'Booking cancelled and item is now available.' });
-
         // Notify the other party
-        console.log(`[CancelBooking] User: ${userId}, Seller: ${booking.seller_id}, Buyer: ${booking.user_id}`);
+        const currentUserId = String(userId);
+        const sellerId = String(booking.seller_id);
+        const buyerId = String(booking.user_id);
+        console.log(`[CancelBooking] User: ${currentUserId}, Seller: ${sellerId}, Buyer: ${buyerId}`);
 
-        if (userId == booking.seller_id) {
+        if (currentUserId === sellerId) {
             console.log('[CancelBooking] Seller cancelled. Notifying buyer.');
             // Seller cancelled, notify buyer
             await createNotification(
@@ -40,7 +41,7 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
                 `Your reservation for "${booking.title || 'the item'}" has been cancelled by the seller.`,
                 booking.item_id
             );
-        } else if (userId == booking.user_id) {
+        } else if (currentUserId === buyerId) {
             console.log('[CancelBooking] Buyer cancelled. Notifying seller.');
             // Buyer cancelled, notify seller
             await createNotification(
@@ -52,6 +53,8 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
         } else {
             console.log('[CancelBooking] No match for cancellation notification.');
         }
+
+        res.json({ message: 'Booking cancelled and item is now available.' });
     } catch (err) {
         console.error('Cancel Booking error:', err);
         res.status(500).json({ error: 'Failed to cancel booking.' });
