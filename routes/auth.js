@@ -9,30 +9,42 @@ const nodemailer = require('nodemailer');
 
 // Helper to send OTP
 async function sendOTP(email, otp, type) {
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+    const isPlaceholder = !process.env.EMAIL_USER ||
+        process.env.EMAIL_USER.includes('your_email') ||
+        !process.env.EMAIL_PASS ||
+        process.env.EMAIL_PASS.includes('your_app_password');
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: `UniFind - ${type} OTP`,
-            text: `Your ${type.toLowerCase()} verification code is: ${otp}\n\nThis code expires in 15 minutes.`
-        };
+    if (!isPlaceholder) {
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
 
-        await transporter.sendMail(mailOptions);
-    } else {
-        console.log('---------------------------------------------------');
-        console.log(`[MOCK EMAIL SERVICE] To: ${email}`);
-        console.log(`[MOCK EMAIL SERVICE] Subject: ${type} OTP`);
-        console.log(`[MOCK EMAIL SERVICE] Your verification code is: ${otp}`);
-        console.log('---------------------------------------------------');
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: `UniFind - ${type} OTP`,
+                text: `Your ${type.toLowerCase()} verification code is: ${otp}\n\nThis code expires in 15 minutes.`
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log(`[EMAIL SERVICE] OTP sent to ${email}`);
+            return;
+        } catch (error) {
+            console.error('[EMAIL SERVICE] Failed to send email:', error.message);
+            // Fall through to mock service if real email fails
+        }
     }
+
+    console.log('---------------------------------------------------');
+    console.log(`[MOCK EMAIL SERVICE] To: ${email}`);
+    console.log(`[MOCK EMAIL SERVICE] Subject: ${type} OTP`);
+    console.log(`[MOCK EMAIL SERVICE] Your verification code is: ${otp}`);
+    console.log('---------------------------------------------------');
 }
 
 // 1. Auth - Simple REST API (KUmail only)
@@ -76,8 +88,10 @@ router.post('/kumail', async (req, res) => {
 
             const validPassword = await bcrypt.compare(password, user.password || '');
             if (!validPassword) {
+                console.log('[DEBUG] Invalid password for user:', email);
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
+            console.log('[DEBUG] Login successful for user:', email);
 
         } else if (type === 'register') {
             if (existingUsers.length > 0) {
@@ -117,6 +131,7 @@ router.post('/kumail', async (req, res) => {
             );
 
             // Send OTP
+            console.log('[DEBUG] Sending registration OTP to:', email);
             await sendOTP(email, otp, 'Registration');
 
             return res.json({
@@ -128,6 +143,7 @@ router.post('/kumail', async (req, res) => {
         }
 
         // Generate JWT token
+        console.log('[DEBUG] Generating JWT token for user:', user.email);
         const token = jwt.sign(
             { id: user.id, email: user.email, name: user.name },
             JWT_SECRET,
@@ -140,8 +156,10 @@ router.post('/kumail', async (req, res) => {
             user: { id: user.id, name: user.name, email: user.email }
         });
     } catch (err) {
-        console.error('Auth error:', err);
-        res.status(500).json({ error: 'Authentication failed' });
+        console.error('Auth crash error type:', err.name);
+        console.error('Auth crash error message:', err.message);
+        console.error('Auth crash stack:', err.stack);
+        res.status(500).json({ error: `Authentication failed: ${err.message}` });
     }
 });
 

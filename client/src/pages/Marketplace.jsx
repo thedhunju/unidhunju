@@ -11,7 +11,6 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
-    const [maxPrice, setMaxPrice] = useState(5000);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -35,29 +34,26 @@ export default function Marketplace() {
         const params = new URLSearchParams(location.search);
         const categoryParam = params.get('category') || 'All';
         const searchParam = params.get('search') || '';
-        const priceParam = params.get('maxPrice') || '5000';
 
         // Find matching category case-insensitively
         const match = CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase()) || 'All';
 
         setSelectedCategory(match);
         setSearchTerm(searchParam);
-        setMaxPrice(parseInt(priceParam));
 
         const debounceTimer = setTimeout(() => {
-            fetchFilteredItems(match, searchParam, parseInt(priceParam));
+            fetchFilteredItems(match, searchParam);
         }, 300);
 
         return () => clearTimeout(debounceTimer);
     }, [location.search]);
 
-    const fetchFilteredItems = async (category, search, price) => {
+    const fetchFilteredItems = async (category, search) => {
         setLoading(true);
         try {
             const params = {};
             if (category !== 'All') params.category = category;
             if (search) params.search = search;
-            if (price) params.maxPrice = price;
 
             const { data } = await api.get('/items', { params });
             setItems(data);
@@ -119,24 +115,6 @@ export default function Marketplace() {
                         </div>
                     </div>
 
-                    <div className="border-t border-gray-100 my-6"></div>
-
-                    {/* Price Range */}
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <h4 className="font-medium text-gray-700">Max Price</h4>
-                            <span className="text-sm text-gray-500">Rs {maxPrice}</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="20000"
-                            step="500"
-                            value={maxPrice}
-                            onChange={(e) => updateURL({ maxPrice: e.target.value })}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                    </div>
                 </div>
             </aside>
 

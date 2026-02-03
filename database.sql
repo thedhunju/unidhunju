@@ -10,6 +10,9 @@ CREATE TABLE users (
   is_verified tinyint(1) DEFAULT '0',
   verification_otp varchar(6) DEFAULT NULL,
   verification_otp_expires datetime DEFAULT NULL,
+  instagram_handle varchar(255) DEFAULT NULL,
+  whatsapp_number varchar(20) DEFAULT NULL,
+  facebook_link varchar(255) DEFAULT NULL,
   created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY email (email)

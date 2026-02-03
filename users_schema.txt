@@ -1,0 +1,9 @@
+id
+name
+email
+password
+picture
+created_at
+instagram_handle
+whatsapp_number
+facebook_link
