@@ -370,7 +370,7 @@ app.post('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
 
     // Fetch booking and item info
     const [bookings] = await db.execute(
-      'SELECT b.*, i.uploaded_by as seller_id, i.id as item_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+      'SELECT b.*, i.uploaded_by as seller_id, i.id as item_id, i.title FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
       [bookingId]
     );
 
@@ -392,6 +392,13 @@ app.post('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
 
     // Update item status
     await db.execute('UPDATE items SET status = "sold" WHERE id = ?', [booking.item_id]);
+
+    // Create Notification for Buyer
+    const message = `Your reservation for "${booking.title || 'item'}" has been confirmed!`;
+    await db.execute(
+      'INSERT INTO notifications (user_id, message, type, item_id) VALUES (?, ?, ?, ?)',
+      [booking.user_id, message, 'reservation_accepted', booking.item_id]
+    );
 
     res.json({ message: 'Deal confirmed! Item marks as sold.' });
   } catch (err) {
@@ -486,13 +493,20 @@ app.post('/api/items/:id/reserve', authenticateToken, async (req, res) => {
     }
 
     // 1. Create Booking
-    await db.execute(
+    const [bookingResult] = await db.execute(
       'INSERT INTO bookings (item_id, user_id, booked_quantity, status) VALUES (?, ?, ?, ?)',
       [itemId, userId, 1, 'reserved']
     );
 
     // 2. Update Item Status
     await db.execute('UPDATE items SET status = ? WHERE id = ?', ['reserved', itemId]);
+
+    // 3. Create Notification for Seller
+    const message = `Someone reserved your item: ${item.title}`;
+    await db.execute(
+      'INSERT INTO notifications (user_id, message, type, item_id) VALUES (?, ?, ?, ?)',
+      [item.uploaded_by, message, 'reservation_request', itemId]
+    );
 
     res.json({ message: 'Item reserved successfully!', itemId: itemId });
   } catch (err) {
@@ -528,6 +542,15 @@ app.post('/api/bookings/:id/cancel', authenticateToken, async (req, res) => {
     // Set item back to available
     await db.execute('UPDATE items SET status = "available" WHERE id = ?', [booking.item_id]);
 
+    // Notify the other party
+    const targetUserId = userId === booking.user_id ? booking.seller_id : booking.user_id;
+    const message = `Reservation cancelled for item #${booking.item_id}`;
+
+    await db.execute(
+      'INSERT INTO notifications (user_id, message, type, item_id) VALUES (?, ?, ?, ?)',
+      [targetUserId, message, 'reservation_cancelled', booking.item_id]
+    );
+
     res.json({ message: 'Booking cancelled and item is now available.' });
   } catch (err) {
     console.error('Cancel Booking error:', err);
@@ -555,6 +578,54 @@ app.get('/api/my-purchases', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Error fetching purchases:', err);
     res.status(500).json({ error: 'Failed to fetch purchases' });
+  }
+});
+
+// --- Notifications Routes ---
+
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [notifications] = await db.execute(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+      [userId]
+    );
+    res.json(notifications);
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    const userId = req.user.id;
+
+    // Ensure ownership
+    await db.execute(
+      'UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?',
+      [notificationId, userId]
+    );
+
+    res.json({ message: 'Notification marked as read' });
+  } catch (err) {
+    console.error('Error marking notification as read:', err);
+    res.status(500).json({ error: 'Failed to update notification' });
+  }
+});
+
+app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await db.execute(
+      'UPDATE notifications SET is_read = TRUE WHERE user_id = ?',
+      [userId]
+    );
+    res.json({ message: 'All notifications marked as read' });
+  } catch (err) {
+    console.error('Error marking all notifications as read:', err);
+    res.status(500).json({ error: 'Failed to update notifications' });
   }
 });
 

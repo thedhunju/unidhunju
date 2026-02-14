@@ -9,10 +9,12 @@ import Register from './pages/Register';
 
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
+import WelcomePopup from './components/WelcomePopup';
 
 function App() {
   return (
     <Router>
+      <WelcomePopup />
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
         <Routes>
           <Route element={<Layout />}>

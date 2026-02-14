@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import api from '../api';
 
@@ -11,7 +11,8 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
-    const [maxPrice, setMaxPrice] = useState(5000);
+    const [minPrice, setMinPrice] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -32,29 +33,28 @@ export default function Marketplace() {
         const params = new URLSearchParams(location.search);
         const categoryParam = params.get('category') || 'All';
         const searchParam = params.get('search') || '';
-        const priceParam = params.get('maxPrice') || '5000';
+        const minPriceParam = params.get('minPrice') || '';
+        const maxPriceParam = params.get('maxPrice') || '';
 
         // Find matching category case-insensitively
         const match = CATEGORIES.find(c => c.toLowerCase() === categoryParam.toLowerCase()) || 'All';
 
         setSelectedCategory(match);
         setSearchTerm(searchParam);
-        setMaxPrice(parseInt(priceParam));
+        setMinPrice(minPriceParam);
+        setMaxPrice(maxPriceParam);
 
-        const debounceTimer = setTimeout(() => {
-            fetchFilteredItems(match, searchParam, parseInt(priceParam));
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
+        fetchFilteredItems(match, searchParam, minPriceParam, maxPriceParam);
     }, [location.search]);
 
-    const fetchFilteredItems = async (category, search, price) => {
+    const fetchFilteredItems = async (category, search, min, max) => {
         setLoading(true);
         try {
             const params = {};
             if (category !== 'All') params.category = category;
             if (search) params.search = search;
-            if (price) params.maxPrice = price;
+            if (min) params.minPrice = min;
+            if (max) params.maxPrice = max;
 
             const { data } = await api.get('/items', { params });
             setItems(data);
@@ -97,19 +97,29 @@ export default function Marketplace() {
 
                     {/* Price Range */}
                     <div>
-                        <div className="flex justify-between mb-2">
-                            <h4 className="font-medium text-gray-700">Max Price</h4>
-                            <span className="text-sm text-gray-500">Rs {maxPrice}</span>
+                        <h4 className="font-medium text-gray-700 mb-2">Price Range</h4>
+                        <div className="flex flex-col gap-2">
+                            <input
+                                type="number"
+                                placeholder="Min Price"
+                                value={minPrice}
+                                onChange={(e) => setMinPrice(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            <input
+                                type="number"
+                                placeholder="Max Price"
+                                value={maxPrice}
+                                onChange={(e) => setMaxPrice(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            <button
+                                onClick={() => updateURL({ minPrice, maxPrice })}
+                                className="w-full bg-blue-600 text-white text-sm font-medium py-2 rounded-md hover:bg-blue-700 transition"
+                            >
+                                Apply Filter
+                            </button>
                         </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="20000"
-                            step="500"
-                            value={maxPrice}
-                            onChange={(e) => updateURL({ maxPrice: e.target.value })}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
                     </div>
                 </div>
             </aside>
@@ -130,8 +140,8 @@ export default function Marketplace() {
                             placeholder="Search marketplace..."
                         />
                     </div>
-                    <div className="text-sm text-gray-500">
-                        Showing {items.length} results
+                    <div className="text-sm text-gray-500 whitespace-nowrap">
+                        Showing {items.length} records
                     </div>
                 </div>
 

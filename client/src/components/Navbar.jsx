@@ -1,14 +1,60 @@
 import { Link } from 'react-router-dom';
-import { User, PlusCircle, Search, LogOut } from 'lucide-react';
+import { User, PlusCircle, Search, LogOut, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!user) {
+            setNotifications([]);
+            return;
+        }
+
+        fetchNotifications();
+
+        // Optional: Poll for new notifications every 60s
+        const interval = setInterval(fetchNotifications, 60000);
+        return () => clearInterval(interval);
+    }, [user]);
+
+    const fetchNotifications = async () => {
+        try {
+            const { data } = await api.get('/notifications');
+            setNotifications(data);
+        } catch (err) {
+            console.error('Failed to fetch notifications:', err);
+        }
+    };
+
+    const markAsRead = async (id) => {
+        try {
+            await api.put(`/notifications/${id}/read`);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1 } : n));
+        } catch (err) {
+            console.error('Failed to mark read:', err);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        try {
+            await api.put('/notifications/read-all');
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+        } catch (err) {
+            console.error('Failed to mark all read:', err);
+        }
+    };
+
+    const unreadCount = notifications.filter(n => !n.is_read).length;
 
     const handleSearch = (e) => {
         if (e.key === 'Enter' && searchQuery.trim()) {
@@ -54,6 +100,30 @@ export default function Navbar() {
                                     <PlusCircle className="h-4 w-4" />
                                     <span>Post Item</span>
                                 </Link>
+
+                                {/* Notifications */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowNotifications(!showNotifications)}
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition relative group"
+                                    >
+                                        <Bell className="h-6 w-6" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {showNotifications && (
+                                        <NotificationDropdown
+                                            notifications={notifications}
+                                            onMarkAsRead={markAsRead}
+                                            onMarkAllAsRead={markAllAsRead}
+                                            onClose={() => setShowNotifications(false)}
+                                        />
+                                    )}
+                                </div>
 
                                 {/* User Profile Dropdown */}
                                 <div className="relative">
@@ -115,11 +185,14 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Click outside to close dropdown */}
-            {showDropdown && (
+            {/* Click outside to close dropdowns */}
+            {(showDropdown || showNotifications) && (
                 <div
                     className="fixed inset-0 z-40"
-                    onClick={() => setShowDropdown(false)}
+                    onClick={() => {
+                        setShowDropdown(false);
+                        setShowNotifications(false);
+                    }}
                 />
             )}
         </nav>
