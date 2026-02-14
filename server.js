@@ -174,23 +174,26 @@ app.get('/api/dashboard', authenticateToken, async (req, res) => {
 // Update Profile
 app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
-    const { name, removePicture } = req.body;
+    const { name } = req.body;
     const userId = req.user.id;
     let picture = null;
-    let isRemoving = removePicture === 'true';
 
     // If new avatar uploaded, update picture URL
     if (req.file) {
       picture = `/uploads/${req.file.filename}`;
-      isRemoving = false; // Uploading a new one cancels removal
     }
 
-    if (isRemoving) {
-      await db.execute('UPDATE users SET picture = NULL WHERE id = ?', [userId]);
-    } else if (picture) {
-      await db.execute('UPDATE users SET name = ? , picture = ? WHERE id = ?', [name, picture, userId]);
-    } else {
-      await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
+    try {
+      await db.execute('UPDATE users SET name = ?' + (picture ? ', picture = ?' : '') + ' WHERE id = ?',
+        picture ? [name, picture, userId] : [name, userId]
+      );
+    } catch (sqlErr) {
+      // If 'picture' column doesn't exist (ER_BAD_FIELD_ERROR), fallback to name only
+      if (sqlErr.code === 'ER_BAD_FIELD_ERROR' || sqlErr.code === 'ER_UNKNOWN_COLUMN') {
+        await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
+      } else {
+        throw sqlErr;
+      }
     }
 
     // Refresh user data
@@ -200,7 +203,7 @@ app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, 
 
     res.json({ message: 'Profile updated', user: updatedUser });
   } catch (err) {
-    console.error('[ERROR] PUT /api/profile:', err);
+    console.error(err);
     res.status(500).send('Error updating profile');
   }
 });
@@ -226,19 +229,19 @@ app.get('/api/my-items', authenticateToken, async (req, res) => {
 // Create Item
 app.post('/api/items', authenticateToken, upload.array('images', 5), async (req, res) => {
   try {
-    const { title, description, price, category, condition } = req.body;
+    const { title, description, price, category } = req.body;
     const userId = req.user.id;
-    const imageUrl = (req.files && req.files.length > 0) ? `/uploads/${req.files[0].filename}` : '';
+    const imageUrl = req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
 
     const [result] = await db.execute(
-      'INSERT INTO items (uploaded_by, title, description, price, category, item_condition, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, title, description, price, category.toLowerCase(), condition.toLowerCase(), imageUrl]
+      'INSERT INTO items (uploaded_by, title, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, title, description, price, category.toLowerCase(), imageUrl]
     );
 
     res.status(201).json({ id: result.insertId, message: 'Item listed successfully' });
   } catch (err) {
-    console.error('[DEBUG] Create Item Error:', err);
-    res.status(500).send('Error creating item listing: ' + err.message);
+    console.error(err);
+    res.status(500).send('Error creating item listing');
   }
 });
 

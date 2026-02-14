@@ -11,6 +11,7 @@
 - **👤 Profile Management**: Customizable profiles with names and profile pictures that persist.
 - **🔑 Secure Password Reset**: OTP-based verification system integrated with email services.
 - **🔍 Advanced Search & Filters**: Search for specific items and filter by category or price range.
+- **🔔 Real-time Notifications**: Integrated Toast notifications and a notification dropdown for status updates.
 
 ## 🛠️ Tech Stack
 
@@ -23,41 +24,44 @@
 
 ## ⚙️ Setup & Installation
 
-### 1. Prerequisite
+### 1. Prerequisites
 - Node.js installed.
-- MySQL server running with a database named `unifind_db`.
+- MySQL server running.
 
-### 2. Backend Setup
-1. Open the root directory.
-2. Install dependencies:
+### 2. Database Setup
+1. Create a database named `unifindc2c` (or as per your `.env`).
+2. Import the schema from `database.sql`:
+   ```bash
+   mysql -u root -p database_name < database.sql
+   ```
+
+### 3. Integrated Setup (Recommended)
+You can run both the backend and frontend simultaneously from the root directory.
+
+1. **Install Dependencies**:
    ```bash
    npm install
    ```
-3. Configure your environment: Create a `.env` file based on `.env.sample`.
+2. **Configure Environment**: Create a `.env` file in the root directory.
    ```env
    DB_HOST=localhost
    DB_USER=root
    DB_PASSWORD=your_password
-   DB_NAME=unifind_db
+   DB_NAME=unifindc2c
    JWT_SECRET=your_secret_key
+   PORT=3000
    EMAIL_USER=your_gmail@gmail.com
    EMAIL_PASS=your_gmail_app_password
    ```
-4. Start the server:
-   ```bash
-   node server.js
-   ```
-
-### 3. Frontend Setup
-1. Navigate to the `client` directory: `cd client`
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
+3. **Start Development Servers**:
    ```bash
    npm run dev
    ```
+   *This command uses `concurrently` to start the backend server (on port 3000) and the frontend Vite server.*
+
+### 4. Alternative Manual Setup
+- **Backend**: `npm run server` (runs nodemon)
+- **Frontend**: `cd client && npm install && npm run dev`
 
 ## 🤝 Contributing
 This is a prototype developed for Kathmandu University students. Feedback and contributions are welcome!

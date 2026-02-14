@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
-import { User, Mail, Edit, Package, CheckCircle, Heart, LogOut, X } from 'lucide-react';
+import { User, MapPin, Mail, Edit, Package, CheckCircle, Heart, LogOut, X } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +16,7 @@ export default function Profile() {
         email: '',
         faculty: 'Student',
         avatar: 'https://placehold.co/150x150/3b82f6/ffffff?text=User',
+        location: 'KU, Dhulikhel'
     });
 
     const [myItems, setMyItems] = useState([]);
@@ -27,8 +28,6 @@ export default function Profile() {
     const [editName, setEditName] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const [shouldRemovePicture, setShouldRemovePicture] = useState(false);
-    const [editMode, setEditMode] = useState('full'); // 'full' or 'name-only'
     const { logout, refreshUser, user } = useAuth();
 
 
@@ -74,9 +73,7 @@ export default function Profile() {
         try {
             const formData = new FormData();
             formData.append('name', editName);
-            if (shouldRemovePicture) {
-                formData.append('removePicture', 'true');
-            } else if (imageFile) {
+            if (imageFile) {
                 formData.append('avatar', imageFile);
             }
 
@@ -86,21 +83,12 @@ export default function Profile() {
                 },
             });
 
-            // Update local state and construct correct avatar URL
-            const updatedUser = res.data.user;
-            const updatedPic = updatedUser.picture
-                ? `http://localhost:3000${updatedUser.picture}`
-                : `https://placehold.co/150x150/3b82f6/ffffff?text=${updatedUser.name.charAt(0).toUpperCase()}`;
-
+            // Update local state
             setProfile(prev => ({
                 ...prev,
-                name: updatedUser.name,
-                avatar: updatedPic
+                name: res.data.user.name,
+                avatar: `http://localhost:3000${res.data.user.picture}`
             }));
-
-            setShouldRemovePicture(false);
-            setImageFile(null);
-            setIsEditing(false);
 
             // Update global context
             if (refreshUser) {
@@ -159,10 +147,7 @@ export default function Profile() {
                             className="w-32 h-32 rounded-full border-4 border-blue-50 object-cover"
                         />
                         <button
-                            onClick={() => {
-                                setEditMode('full');
-                                setIsEditing(true);
-                            }}
+                            onClick={() => setIsEditing(true)}
                             className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition"
                         >
                             <Edit className="h-4 w-4" />
@@ -170,25 +155,17 @@ export default function Profile() {
                     </div>
 
                     <div className="flex-1 text-center md:text-left space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div>
                             <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
-                            <button
-                                onClick={() => {
-                                    setEditMode('name-only');
-                                    setEditName(profile.name);
-                                    setIsEditing(true);
-                                }}
-                                className="text-gray-400 hover:text-blue-600 transition-colors p-1"
-                                title="Edit Name"
-                            >
-                                <Edit className="h-5 w-5" />
-                            </button>
+                            <p className="text-blue-600 font-medium">{profile.faculty}</p>
                         </div>
-                        <p className="text-blue-600 font-medium">{profile.faculty}</p>
 
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-center md:justify-start text-gray-500">
                             <div className="flex items-center">
                                 <Mail className="h-4 w-4 mr-2" /> {profile.email}
+                            </div>
+                            <div className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-2" /> {profile.location}
                             </div>
                         </div>
 
@@ -234,45 +211,25 @@ export default function Profile() {
                                 />
                             </div>
 
-                            {editMode === 'full' && (
-                                <div className="flex justify-center mb-6">
-                                    <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
-                                        <img
-                                            src={imagePreview || profile.avatar}
-                                            alt="Profile Preview"
-                                            className={`w-24 h-24 rounded-full object-cover border-4 transition ${shouldRemovePicture ? 'opacity-30 border-red-200' : 'border-gray-100 group-hover:border-blue-100'}`}
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                                            <div className="text-white text-xs font-medium">Change</div>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            id="avatar-upload"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                handleImageChange(e);
-                                                setShouldRemovePicture(false);
-                                            }}
-                                        />
+                            <div className="flex justify-center mb-6">
+                                <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
+                                    <img
+                                        src={imagePreview || profile.avatar}
+                                        alt="Profile Preview"
+                                        className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 group-hover:border-blue-100 transition"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                        <div className="text-white text-xs font-medium">Change</div>
                                     </div>
-                                    {profile.avatar && !profile.avatar.includes('placehold.co') && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShouldRemovePicture(!shouldRemovePicture);
-                                                if (!shouldRemovePicture) {
-                                                    setImageFile(null);
-                                                    setImagePreview(null);
-                                                }
-                                            }}
-                                            className={`mt-2 text-xs font-medium px-3 py-1 rounded-full transition ${shouldRemovePicture ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
-                                        >
-                                            {shouldRemovePicture ? 'Keep Current Picture' : 'Remove Picture'}
-                                        </button>
-                                    )}
+                                    <input
+                                        type="file"
+                                        id="avatar-upload"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                    />
                                 </div>
-                            )}
+                            </div>
 
                             <div className="pt-4 flex gap-3">
                                 <button
